@@ -26,7 +26,7 @@ No build step, no backend, no external libraries. All pages share one connected 
 A second, fully self-contained portal UI lives in **`student-portal/index.html`**.
 It has its own landing hero, "Find Your School" selector, captcha login and student
 dashboard — all in one file with the campus photo embedded. Open it directly or visit
-<http://localhost:8000/student-portal/>. See `student-portal/README.md` for details.
+<https://rg100152.github.io/schmang/>. See `student-portal/README.md` for details.
 
 ---
 
