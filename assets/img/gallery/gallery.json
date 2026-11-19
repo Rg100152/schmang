@@ -1,0 +1,178 @@
+[
+  {
+    "slug": "campus-01",
+    "category": "campus",
+    "categoryLabel": "Campus Architecture",
+    "title": "Campus Architecture \u00b7 01",
+    "alt": "Campus Architecture \u00b7 01 \u2014 Raj School gallery",
+    "thumb": "../assets/img/gallery/campus-01.webp",
+    "full": "../Modern%20Campus%20Architecture.png",
+    "original": "Modern Campus Architecture.png",
+    "size": 27934
+  },
+  {
+    "slug": "campus-02",
+    "category": "campus",
+    "categoryLabel": "Campus Architecture",
+    "title": "Campus Architecture \u00b7 02",
+    "alt": "Campus Architecture \u00b7 02 \u2014 Raj School gallery",
+    "thumb": "../assets/img/gallery/campus-02.webp",
+    "full": "../Modern%20Campus%20Architecture2.png",
+    "original": "Modern Campus Architecture2.png",
+    "size": 27718
+  },
+  {
+    "slug": "campus-03",
+    "category": "campus",
+    "categoryLabel": "Campus Architecture",
+    "title": "Campus Architecture \u00b7 03",
+    "alt": "Campus Architecture \u00b7 03 \u2014 Raj School gallery",
+    "thumb": "../assets/img/gallery/campus-03.webp",
+    "full": "../Modern%20Campus%20Architecture3.png",
+    "original": "Modern Campus Architecture3.png",
+    "size": 48108
+  },
+  {
+    "slug": "campus-04",
+    "category": "campus",
+    "categoryLabel": "Campus Architecture",
+    "title": "Campus Architecture \u00b7 04",
+    "alt": "Campus Architecture \u00b7 04 \u2014 Raj School gallery",
+    "thumb": "../assets/img/gallery/campus-04.webp",
+    "full": "../Modern%20Campus%20Architecture4.png",
+    "original": "Modern Campus Architecture4.png",
+    "size": 31854
+  },
+  {
+    "slug": "campus-05",
+    "category": "campus",
+    "categoryLabel": "Campus Architecture",
+    "title": "Campus Architecture \u00b7 05",
+    "alt": "Campus Architecture \u00b7 05 \u2014 Raj School gallery",
+    "thumb": "../assets/img/gallery/campus-05.webp",
+    "full": "../Modern%20Campus%20Architecture5%20%28Copy%206%29.png",
+    "original": "Modern Campus Architecture5 (Copy 6).png",
+    "size": 37868
+  },
+  {
+    "slug": "campus-06",
+    "category": "campus",
+    "categoryLabel": "Campus Architecture",
+    "title": "Campus Architecture \u00b7 06",
+    "alt": "Campus Architecture \u00b7 06 \u2014 Raj School gallery",
+    "thumb": "../assets/img/gallery/campus-06.webp",
+    "full": "../Modern%20Campus%20Architecture7.png",
+    "original": "Modern Campus Architecture7.png",
+    "size": 57354
+  },
+  {
+    "slug": "campus-07",
+    "category": "campus",
+    "categoryLabel": "Campus Architecture",
+    "title": "Campus Architecture \u00b7 07",
+    "alt": "Campus Architecture \u00b7 07 \u2014 Raj School gallery",
+    "thumb": "../assets/img/gallery/campus-07.webp",
+    "full": "../Modern%20Campus%20Architecture8.png",
+    "original": "Modern Campus Architecture8.png",
+    "size": 46534
+  },
+  {
+    "slug": "campus-08",
+    "category": "campus",
+    "categoryLabel": "Campus Architecture",
+    "title": "Campus Architecture \u00b7 08",
+    "alt": "Campus Architecture \u00b7 08 \u2014 Raj School gallery",
+    "thumb": "../assets/img/gallery/campus-08.webp",
+    "full": "../Modern%20Campus%20Architecture9.png",
+    "original": "Modern Campus Architecture9.png",
+    "size": 45842
+  },
+  {
+    "slug": "waves-01",
+    "category": "waves",
+    "categoryLabel": "Digital Learning",
+    "title": "Digital Learning Waves \u00b7 01",
+    "alt": "Digital Learning Waves \u00b7 01 \u2014 Raj School gallery",
+    "thumb": "../assets/img/gallery/waves-01.webp",
+    "full": "../Futuristic%20Digital%20Education%20Waves.png",
+    "original": "Futuristic Digital Education Waves.png",
+    "size": 24978
+  },
+  {
+    "slug": "waves-02",
+    "category": "waves",
+    "categoryLabel": "Digital Learning",
+    "title": "Digital Learning Waves \u00b7 02",
+    "alt": "Digital Learning Waves \u00b7 02 \u2014 Raj School gallery",
+    "thumb": "../assets/img/gallery/waves-02.webp",
+    "full": "../Futuristic%20Digital%20Education%20Waves1.png",
+    "original": "Futuristic Digital Education Waves1.png",
+    "size": 26280
+  },
+  {
+    "slug": "waves-03",
+    "category": "waves",
+    "categoryLabel": "Digital Learning",
+    "title": "Digital Learning Waves \u00b7 03",
+    "alt": "Digital Learning Waves \u00b7 03 \u2014 Raj School gallery",
+    "thumb": "../assets/img/gallery/waves-03.webp",
+    "full": "../Futuristic%20Digital%20Education%20Waves2.png",
+    "original": "Futuristic Digital Education Waves2.png",
+    "size": 54388
+  },
+  {
+    "slug": "waves-04",
+    "category": "waves",
+    "categoryLabel": "Digital Learning",
+    "title": "Digital Learning Waves \u00b7 04",
+    "alt": "Digital Learning Waves \u00b7 04 \u2014 Raj School gallery",
+    "thumb": "../assets/img/gallery/waves-04.webp",
+    "full": "../Futuristic%20Digital%20Education%20Waves3.png",
+    "original": "Futuristic Digital Education Waves3.png",
+    "size": 22204
+  },
+  {
+    "slug": "library-01",
+    "category": "library",
+    "categoryLabel": "Library & Archive",
+    "title": "Library & Archive \u00b7 01",
+    "alt": "Library & Archive \u00b7 01 \u2014 Raj School gallery",
+    "thumb": "../assets/img/gallery/library-01.webp",
+    "full": "../Dark%20Academia%20%26%20Library%20Aesthetic.png",
+    "original": "Dark Academia & Library Aesthetic.png",
+    "size": 20838
+  },
+  {
+    "slug": "library-02",
+    "category": "library",
+    "categoryLabel": "Library & Archive",
+    "title": "Library & Archive \u00b7 02",
+    "alt": "Library & Archive \u00b7 02 \u2014 Raj School gallery",
+    "thumb": "../assets/img/gallery/library-02.webp",
+    "full": "../Dark%20Academia%20%26%20Library%20Aesthetic1.png",
+    "original": "Dark Academia & Library Aesthetic1.png",
+    "size": 12470
+  },
+  {
+    "slug": "library-03",
+    "category": "library",
+    "categoryLabel": "Library & Archive",
+    "title": "Library & Archive \u00b7 03",
+    "alt": "Library & Archive \u00b7 03 \u2014 Raj School gallery",
+    "thumb": "../assets/img/gallery/library-03.webp",
+    "full": "../Dark%20Academia%20%26%20Library%20Aesthetic2.png",
+    "original": "Dark Academia & Library Aesthetic2.png",
+    "size": 6430
+  },
+  {
+    "slug": "library-04",
+    "category": "library",
+    "categoryLabel": "Library & Archive",
+    "title": "Library & Archive \u00b7 04",
+    "alt": "Library & Archive \u00b7 04 \u2014 Raj School gallery",
+    "thumb": "../assets/img/gallery/library-04.webp",
+    "full": "../Dark%20Academia%20%26%20Library%20Aesthetic3.png",
+    "original": "Dark Academia & Library Aesthetic3.png",
+    "size": 7448
+  }
+]

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%236366f1'/%3E%3Ctext x='32' y='44' font-size='38' font-family='Segoe UI,sans-serif' font-weight='700' fill='white' text-anchor='middle'%3ER%3C/text%3E%3C/svg%3E">
+    <title>Attendance — Raj School</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="grid-bg" data-page="attendance">
+    <div id="app-shell"></div>
+
+    <main class="content">
+        <div class="page-header">
+            <div><h2>Daily Attendance Register</h2><p>Mark P / A — statistics update across the whole portal.</p></div>
+            <input type="date" id="attDate" style="max-width:190px" onchange="initDraft()">
+        </div>
+
+        <div class="kpi-grid">
+            <div class="kpi-card"><div class="kpi-label">Total in Class</div><div class="kpi-value" id="attTotal">0</div></div>
+            <div class="kpi-card"><div class="kpi-label">Present</div><div class="kpi-value" id="attPresent" style="color:var(--success)">0</div></div>
+            <div class="kpi-card"><div class="kpi-label">Absent</div><div class="kpi-value" id="attAbsent" style="color:var(--danger)">0</div></div>
+            <div class="kpi-card"><div class="kpi-label">Percentage</div><div class="kpi-value" id="attPct">0%</div></div>
+        </div>
+
+        <div class="glass-panel">
+            <div class="toolbar">
+                <select id="classFilter" onchange="renderAtt()">
+                    <option value="">All Classes</option>
+                </select>
+                <button class="btn btn-success" onclick="markAll('Present')">✓ Mark all Present</button>
+                <button class="btn btn-danger" onclick="markAll('Absent')">✗ Mark all Absent</button>
+                <div style="flex:1"></div>
+                <button class="btn btn-primary" onclick="saveAttendance()">💾 Save Attendance</button>
+            </div>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead><tr><th>Roll No</th><th>Student Name</th><th>Class</th><th>Status</th><th>Mark Attendance</th></tr></thead>
+                    <tbody id="attBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script src="js/app.js"></script>
+    <script>
+        const dateInput = document.getElementById('attDate');
+        dateInput.valueAsDate = new Date();
+        let draft = {};
+
+        function selectedDate() {
+            if (!dateInput.value) return todayStr();
+            const d = new Date(dateInput.value + 'T00:00:00');
+            return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+        }
+
+        function initDraft() {
+            const log = getAttendanceLog().filter(x => x.date === selectedDate());
+            draft = {};
+            getStudents().forEach(s => {
+                const row = log.find(x => x.roll === s.roll);
+                draft[s.roll] = row ? row.status : s.attendance;
+            });
+            renderAtt();
+        }
+
+        function populateClasses() {
+            const select = document.getElementById('classFilter');
+            const classes = [...new Set(getStudents().map(s => s.class))].sort();
+            select.innerHTML = '<option value="">All Classes</option>' + classes.map(c => `<option>${esc(c)}</option>`).join('');
+        }
+
+        function visibleStudents() {
+            const cls = document.getElementById('classFilter').value;
+            return getStudents().filter(s => !cls || s.class === cls);
+        }
+
+        function renderAtt() {
+            const list = visibleStudents();
+            document.getElementById('attTotal').textContent = list.length;
+            const present = list.filter(s => draft[s.roll] === 'Present').length;
+            const absent = list.length - present;
+            document.getElementById('attPresent').textContent = present;
+            document.getElementById('attAbsent').textContent = absent;
+            document.getElementById('attPct').textContent = Math.round(present / Math.max(list.length, 1) * 100) + '%';
+
+            document.getElementById('attBody').innerHTML = list.length ? list.map(s => {
+                const status = draft[s.roll] || 'Present';
+                return `
+                <tr>
+                    <td><strong>${esc(s.roll)}</strong></td>
+                    <td>${esc(s.name)}</td>
+                    <td>${esc(s.class)}</td>
+                    <td><span class="badge ${status === 'Present' ? 'badge-present' : 'badge-absent'}">${status}</span></td>
+                    <td>
+                        <button class="att-btn present ${status === 'Present' ? 'active' : ''}" onclick="setAtt('${esc(s.roll)}','Present')">P Present</button>
+                        <button class="att-btn absent ${status === 'Absent' ? 'active' : ''}" onclick="setAtt('${esc(s.roll)}','Absent')">A Absent</button>
+                    </td>
+                </tr>`;
+            }).join('') : '<tr><td colspan="5"><div class="empty"><span>🎓</span>No students in this class.</div></td></tr>';
+        }
+
+        function setAtt(roll, status) {
+            draft[roll] = status;
+            renderAtt();
+        }
+
+        function markAll(status) {
+            visibleStudents().forEach(s => { draft[s.roll] = status; });
+            renderAtt();
+        }
+
+        function saveAttendance() {
+            const date = selectedDate();
+            const students = getStudents();
+            students.forEach(s => {
+                if (draft[s.roll]) s.attendance = draft[s.roll];
+            });
+            saveStudents(students);
+
+            const log = getAttendanceLog().filter(x => x.date !== date);
+            Object.entries(draft).forEach(([roll, status]) => log.push({ date, roll, status }));
+            saveAttendanceLog(log);
+            toast('Attendance saved for ' + date);
+        }
+
+        populateClasses();
+        initDraft();
+    </script>
+</body>
+</html>

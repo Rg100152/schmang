@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%236366f1'/%3E%3Ctext x='32' y='44' font-size='38' font-family='Segoe UI,sans-serif' font-weight='700' fill='white' text-anchor='middle'%3ER%3C/text%3E%3C/svg%3E">
+    <title>Timetable — Raj School</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="grid-bg" data-page="timetable">
+    <div id="app-shell"></div>
+
+    <main class="content">
+        <div class="page-header">
+            <div><h2>Class Timetable</h2><p>Weekly schedule by class, period and subject.</p></div>
+            <button class="btn btn-primary admin-only" onclick="openPeriodModal()">＋ Add Period</button>
+        </div>
+
+        <div class="toolbar">
+            <select id="classFilter" onchange="renderTimetable()"></select>
+            <span class="muted small" id="countLabel"></span>
+        </div>
+
+        <div id="timetableArea"></div>
+    </main>
+
+    <div class="modal" id="periodModal">
+        <div class="modal-box">
+            <h3 style="margin-bottom:18px;">Add Timetable Period</h3>
+            <form onsubmit="savePeriod(event)">
+                <div class="form-grid">
+                    <div class="form-group"><label>Day</label>
+                        <select id="pDay"><option>Monday</option><option>Tuesday</option><option>Wednesday</option><option>Thursday</option><option>Friday</option><option>Saturday</option></select>
+                    </div>
+                    <div class="form-group"><label>Period No.</label><input id="pPeriod" type="number" min="1" max="10" value="1" required></div>
+                    <div class="form-group"><label>Time</label><input id="pTime" placeholder="08:30 - 09:15" required></div>
+                    <div class="form-group"><label>Class</label>
+                        <select id="pClass"><option>10-A</option><option>10-B</option><option>9-A</option><option>9-B</option><option>8-A</option></select>
+                    </div>
+                    <div class="form-group"><label>Subject</label><input id="pSubject" required placeholder="e.g. Mathematics"></div>
+                    <div class="form-group"><label>Teacher</label><input id="pTeacher" placeholder="e.g. Mrs. Sunita Rao"></div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('periodModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Period</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        const user = getUser();
+        const isAdmin = user && user.role === 'Admin';
+        if (!isAdmin) document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
+
+        const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+        function populateClasses() {
+            const classes = [...new Set(getTimetable().map(t => t.className).concat(getStudents().map(s => s.class)))].sort();
+            const select = document.getElementById('classFilter');
+            select.innerHTML = '<option value="">All Classes</option>' + classes.map(c => `<option>${esc(c)}</option>`).join('');
+            if (classes.includes('10-A')) select.value = '10-A';
+        }
+
+        function renderTimetable() {
+            const cls = document.getElementById('classFilter').value;
+            const rows = getTimetable().filter(t => !cls || t.className === cls);
+            document.getElementById('countLabel').textContent = rows.length + ' period(s)';
+            const area = document.getElementById('timetableArea');
+
+            if (!rows.length) {
+                area.innerHTML = '<div class="glass-panel empty"><span>🗓️</span>No periods scheduled.</div>';
+                return;
+            }
+
+            area.innerHTML = DAYS.map(day => {
+                const periods = rows.filter(t => t.day === day).sort((a, b) => Number(a.period) - Number(b.period));
+                if (!periods.length) return '';
+                return `
+                    <div class="glass-panel">
+                        <div class="panel-title">📅 ${day}</div>
+                        <div class="table-wrapper">
+                            <table>
+                                <thead><tr><th>Period</th><th>Time</th><th>Class</th><th>Subject</th><th>Teacher</th>${isAdmin ? '<th>Action</th>' : ''}</tr></thead>
+                                <tbody>
+                                    ${periods.map(p => `
+                                        <tr>
+                                            <td><strong>P${esc(p.period)}</strong></td>
+                                            <td>${esc(p.time)}</td>
+                                            <td>${esc(p.className)}</td>
+                                            <td><span class="badge badge-info">${esc(p.subject)}</span></td>
+                                            <td>${esc(p.teacher || '—')}</td>
+                                            ${isAdmin ? `<td><button class="btn btn-danger btn-sm" onclick="deletePeriod('${esc(p.day)}','${esc(p.period)}','${esc(p.className)}')">Delete</button></td>` : ''}
+                                        </tr>`).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>`;
+            }).join('');
+        }
+
+        function openPeriodModal() {
+            openModal('periodModal');
+        }
+
+        function savePeriod(event) {
+            event.preventDefault();
+            const all = getTimetable();
+            all.push({
+                day: document.getElementById('pDay').value,
+                period: document.getElementById('pPeriod').value,
+                time: document.getElementById('pTime').value.trim(),
+                className: document.getElementById('pClass').value,
+                subject: document.getElementById('pSubject').value.trim(),
+                teacher: document.getElementById('pTeacher').value.trim()
+            });
+            saveTimetable(all);
+            closeModal('periodModal');
+            document.getElementById('periodModal').querySelector('form').reset();
+            populateClasses();
+            renderTimetable();
+            toast('Period added to timetable');
+        }
+
+        function deletePeriod(day, period, className) {
+            if (!confirm('Delete P' + period + ' on ' + day + ' for class ' + className + '?')) return;
+            saveTimetable(getTimetable().filter(t => !(t.day === day && String(t.period) === String(period) && t.className === className)));
+            renderTimetable();
+            toast('Period removed');
+        }
+
+        populateClasses();
+        renderTimetable();
+    </script>
+</body>
+</html>

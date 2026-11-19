@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%236366f1'/%3E%3Ctext x='32' y='44' font-size='38' font-family='Segoe UI,sans-serif' font-weight='700' fill='white' text-anchor='middle'%3ER%3C/text%3E%3C/svg%3E">
+    <title>Students — Raj School</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="grid-bg" data-page="students">
+    <div id="app-shell"></div>
+
+    <main class="content">
+        <div class="page-header">
+            <div><h2>Student Directory</h2><p>Manage all enrolled students across classes.</p></div>
+            <button class="btn btn-primary admin-only" onclick="openStudentModal()">＋ Register Student</button>
+        </div>
+
+        <div class="glass-panel">
+            <div class="toolbar">
+                <input class="search" id="searchInput" placeholder="Search by name, roll or phone..." oninput="renderTable()">
+                <select id="classFilter" onchange="renderTable()">
+                    <option value="">All Classes</option>
+                    <option>10-A</option><option>10-B</option><option>9-A</option><option>9-B</option><option>8-A</option>
+                </select>
+                <span class="muted small" id="countLabel"></span>
+            </div>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead><tr><th>Roll No</th><th>Student Name</th><th>Class</th><th>Parent Phone</th><th>Fee Status</th><th>Attendance</th><th>Action</th></tr></thead>
+                    <tbody id="studentsBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <div class="modal" id="studentModal">
+        <div class="modal-box">
+            <h3 id="modalTitle" style="margin-bottom:18px;">New Student Admission</h3>
+            <form onsubmit="saveStudent(event)">
+                <div class="form-group"><label>Full Name *</label><input id="stName" required placeholder="Student full name"></div>
+                <div class="form-grid">
+                    <div class="form-group"><label>Class &amp; Section</label>
+                        <select id="stClass"><option>10-A</option><option>10-B</option><option>9-A</option><option>9-B</option><option>8-A</option></select>
+                    </div>
+                    <div class="form-group"><label>Term Fee (₹)</label><input id="stFee" type="number" min="0" value="4500"></div>
+                </div>
+                <div class="form-group"><label>Parent Phone Number *</label><input id="stPhone" required placeholder="+91 98765 43210"></div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('studentModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Student</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        const currentUser = getUser();
+        const canManage = currentUser && currentUser.role === 'Admin';
+        if (!canManage) document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
+
+        let editingRoll = null;
+
+        function renderTable() {
+            const q = document.getElementById('searchInput').value.toLowerCase();
+            const cls = document.getElementById('classFilter').value;
+            const list = getStudents().filter(s =>
+                (!q || s.name.toLowerCase().includes(q) || s.roll.toLowerCase().includes(q) || s.phone.toLowerCase().includes(q)) &&
+                (!cls || s.class === cls)
+            );
+            document.getElementById('countLabel').textContent = list.length + ' student(s)';
+            document.getElementById('studentsBody').innerHTML = list.length ? list.map(s => `
+                <tr>
+                    <td><strong>${esc(s.roll)}</strong></td>
+                    <td>${esc(s.name)}</td>
+                    <td>${esc(s.class)}</td>
+                    <td>${esc(s.phone)}</td>
+                    <td><span class="badge ${s.feeStatus === 'Paid' ? 'badge-paid' : 'badge-pending'}">${esc(s.feeStatus)}</span></td>
+                    <td><span class="badge ${s.attendance === 'Present' ? 'badge-present' : 'badge-absent'}">${esc(s.attendance)}</span></td>
+                    <td>
+                        ${canManage ? `
+                            <button class="btn btn-outline btn-sm" onclick="openStudentModal('${esc(s.roll)}')">Edit</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteStudent('${esc(s.roll)}')">Delete</button>` : '<span class="muted small">Read only</span>'}
+                    </td>
+                </tr>`).join('') : '<tr><td colspan="7"><div class="empty"><span>🔍</span>No students found.</div></td></tr>';
+        }
+
+        function openStudentModal(roll) {
+            editingRoll = roll || null;
+            const s = roll ? getStudents().find(x => x.roll === roll) : null;
+            document.getElementById('modalTitle').textContent = s ? 'Edit Student — ' + s.roll : 'New Student Admission';
+            document.getElementById('stName').value = s ? s.name : '';
+            document.getElementById('stClass').value = s ? s.class : '10-A';
+            document.getElementById('stFee').value = s ? s.feeAmount : 4500;
+            document.getElementById('stPhone').value = s ? s.phone : '';
+            openModal('studentModal');
+        }
+
+        function saveStudent(event) {
+            event.preventDefault();
+            const name = document.getElementById('stName').value.trim();
+            const cls = document.getElementById('stClass').value;
+            const fee = Number(document.getElementById('stFee').value) || 0;
+            const phone = document.getElementById('stPhone').value.trim();
+            const all = getStudents();
+
+            if (editingRoll) {
+                const s = all.find(x => x.roll === editingRoll);
+                if (s) Object.assign(s, { name, class: cls, feeAmount: fee, phone });
+                toast('Student updated');
+            } else {
+                all.push({
+                    roll: nextRoll(), name, class: cls, phone,
+                    feeAmount: fee, feeStatus: 'Pending', attendance: 'Present',
+                    marks: { math: 80, science: 82, cs: 85, english: 78 }
+                });
+                toast('New student admitted');
+            }
+            saveStudents(all);
+            closeModal('studentModal');
+            renderTable();
+        }
+
+        function deleteStudent(roll) {
+            if (!confirm('Remove ' + roll + ' from the student directory?')) return;
+            saveStudents(getStudents().filter(s => s.roll !== roll));
+            renderTable();
+            toast('Student removed');
+        }
+
+        renderTable();
+    </script>
+</body>
+</html>

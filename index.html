@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%236366f1'/%3E%3Ctext x='32' y='44' font-size='38' font-family='Segoe UI,sans-serif' font-weight='700' fill='white' text-anchor='middle'%3ER%3C/text%3E%3C/svg%3E">
+    <title>Login — Raj School Management System</title>
+    <link rel="preload" as="image" href="assets/img/digital-waves.webp">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="grid-bg login-body" data-page="login">
+
+    <div class="login-wrap">
+        <aside class="login-side">
+            <div class="orb orb-a"></div>
+            <div class="orb orb-b"></div>
+            <div class="login-waves" aria-hidden="true">
+                <svg viewBox="0 0 600 420" preserveAspectRatio="none">
+                    <path class="wave-c" d="M0,300 C90,250 150,340 240,300 C330,260 390,330 480,290 C540,262 570,280 600,270 L600,420 L0,420 Z"/>
+                    <path class="wave-b" d="M0,340 C90,300 160,380 250,335 C340,290 400,360 490,320 C540,296 575,315 600,305 L600,420 L0,420 Z"/>
+                    <path class="wave-a" d="M0,380 C100,340 170,410 260,370 C350,330 420,395 510,355 C555,335 580,348 600,342 L600,420 L0,420 Z"/>
+                </svg>
+            </div>
+            <div class="logo-icon">R</div>
+            <h2>Raj School<br>Management System</h2>
+            <p>One secure portal for the entire school community.</p>
+            <ul>
+                <li>🎓 Student records &amp; admissions</li>
+                <li>✅ Daily attendance analytics</li>
+                <li>💳 Fee receipts &amp; pending alerts</li>
+                <li>🏆 Digital marksheets &amp; ID cards</li>
+            </ul>
+            <p style="margin-top:36px;font-size:13px;opacity:.8;">© 2026 Raj School · Smart Digital Campus</p>
+        </aside>
+
+        <main class="login-form-side">
+            <h2>Welcome back 👋</h2>
+            <p>Sign in to access your dashboard</p>
+
+            <form onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label>Select Role</label>
+                    <select id="loginRole">
+                        <option value="Admin">Principal / Admin</option>
+                        <option value="Teacher">Class Teacher</option>
+                        <option value="Student">Student / Parent</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Full Name / Username</label>
+                    <input type="text" id="loginName" value="Raj Gautam" required placeholder="Enter your name">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="loginPass" value="123456" required placeholder="Enter password">
+                </div>
+                <button class="btn btn-primary btn-block" type="submit">Enter Portal →</button>
+            </form>
+
+            <p class="demo-hint">Demo mode · any password works<br><a href="home.html" style="color:var(--primary)">← Back to website</a></p>
+        </main>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        function handleLogin(event) {
+            event.preventDefault();
+            const role = document.getElementById('loginRole').value;
+            const name = document.getElementById('loginName').value.trim() || 'Raj User';
+            localStorage.setItem('raj_school_user', JSON.stringify({ name, role }));
+            location.href = 'dashboard.html';
+        }
+    </script>
+</body>
+</html>

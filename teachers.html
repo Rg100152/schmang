@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%236366f1'/%3E%3Ctext x='32' y='44' font-size='38' font-family='Segoe UI,sans-serif' font-weight='700' fill='white' text-anchor='middle'%3ER%3C/text%3E%3C/svg%3E">
+    <title>Teachers — Raj School</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="grid-bg" data-page="teachers">
+    <div id="app-shell"></div>
+
+    <main class="content">
+        <div class="page-header">
+            <div><h2>Teacher Management</h2><p>Faculty profiles, subjects and assigned classes.</p></div>
+            <button class="btn btn-primary" onclick="openTeacherModal()">＋ Add Teacher</button>
+        </div>
+
+        <div class="kpi-grid">
+            <div class="kpi-card"><div class="kpi-label">Total Faculty</div><div class="kpi-value" id="tTotal">0</div></div>
+            <div class="kpi-card"><div class="kpi-label">Subjects Covered</div><div class="kpi-value" id="tSubjects">0</div></div>
+            <div class="kpi-card"><div class="kpi-label">Classes Assigned</div><div class="kpi-value" id="tClasses">0</div></div>
+        </div>
+
+        <div class="glass-panel">
+            <div class="toolbar">
+                <input class="search" id="searchInput" placeholder="Search teacher or subject..." oninput="renderTable()">
+                <span class="muted small" id="countLabel"></span>
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead><tr><th>ID</th><th>Teacher Name</th><th>Subject</th><th>Qualification</th><th>Phone</th><th>Classes</th><th>Action</th></tr></thead>
+                    <tbody id="teachersBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <div class="modal" id="teacherModal">
+        <div class="modal-box">
+            <h3 id="modalTitle" style="margin-bottom:18px;">Add Teacher</h3>
+            <form onsubmit="saveTeacher(event)">
+                <div class="form-group"><label>Full Name *</label><input id="tName" required placeholder="Teacher name"></div>
+                <div class="form-grid">
+                    <div class="form-group"><label>Subject *</label><input id="tSubject" required placeholder="e.g. Mathematics"></div>
+                    <div class="form-group"><label>Qualification</label><input id="tQual" placeholder="e.g. M.Sc, B.Ed"></div>
+                    <div class="form-group"><label>Phone</label><input id="tPhone" placeholder="+91 .........."></div>
+                    <div class="form-group"><label>Assigned Classes</label><input id="tClasses" placeholder="e.g. 10-A, 9-A"></div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('teacherModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Teacher</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        let editingId = null;
+
+        function nextTeacherId() {
+            const nums = getTeachers().map(t => Number(String(t.id).replace(/\D/g, '')) || 0);
+            return 'T-' + String(Math.max(0, ...nums) + 1).padStart(2, '0');
+        }
+
+        function renderTable() {
+            const q = document.getElementById('searchInput').value.toLowerCase();
+            const list = getTeachers().filter(t =>
+                !q || t.name.toLowerCase().includes(q) || t.subject.toLowerCase().includes(q)
+            );
+            const all = getTeachers();
+            document.getElementById('tTotal').textContent = all.length;
+            document.getElementById('tSubjects').textContent = new Set(all.map(t => t.subject)).size;
+            document.getElementById('tClasses').textContent = new Set(all.flatMap(t => String(t.classes).split(',').map(c => c.trim())).filter(Boolean)).size;
+            document.getElementById('countLabel').textContent = list.length + ' teacher(s)';
+
+            document.getElementById('teachersBody').innerHTML = list.length ? list.map(t => `
+                <tr>
+                    <td><strong>${esc(t.id)}</strong></td>
+                    <td>${esc(t.name)}</td>
+                    <td><span class="badge badge-info">${esc(t.subject)}</span></td>
+                    <td>${esc(t.qualification)}</td>
+                    <td>${esc(t.phone)}</td>
+                    <td>${esc(t.classes)}</td>
+                    <td>
+                        <button class="btn btn-outline btn-sm" onclick="openTeacherModal('${esc(t.id)}')">Edit</button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteTeacher('${esc(t.id)}')">Delete</button>
+                    </td>
+                </tr>`).join('') : '<tr><td colspan="7"><div class="empty"><span>👩‍🏫</span>No teachers found.</div></td></tr>';
+        }
+
+        function openTeacherModal(id) {
+            editingId = id || null;
+            const t = id ? getTeachers().find(x => x.id === id) : null;
+            document.getElementById('modalTitle').textContent = t ? 'Edit Teacher — ' + t.id : 'Add Teacher';
+            document.getElementById('tName').value = t ? t.name : '';
+            document.getElementById('tSubject').value = t ? t.subject : '';
+            document.getElementById('tQual').value = t ? t.qualification : '';
+            document.getElementById('tPhone').value = t ? t.phone : '';
+            document.getElementById('tClasses').value = t ? t.classes : '';
+            openModal('teacherModal');
+        }
+
+        function saveTeacher(event) {
+            event.preventDefault();
+            const data = {
+                name: document.getElementById('tName').value.trim(),
+                subject: document.getElementById('tSubject').value.trim(),
+                qualification: document.getElementById('tQual').value.trim(),
+                phone: document.getElementById('tPhone').value.trim(),
+                classes: document.getElementById('tClasses').value.trim()
+            };
+            const all = getTeachers();
+            if (editingId) {
+                Object.assign(all.find(x => x.id === editingId), data);
+                toast('Teacher updated');
+            } else {
+                all.push({ id: nextTeacherId(), ...data });
+                toast('Teacher added');
+            }
+            saveTeachers(all);
+            closeModal('teacherModal');
+            renderTable();
+        }
+
+        function deleteTeacher(id) {
+            if (!confirm('Remove teacher ' + id + '?')) return;
+            saveTeachers(getTeachers().filter(t => t.id !== id));
+            renderTable();
+            toast('Teacher removed');
+        }
+
+        renderTable();
+    </script>
+</body>
+</html>

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%236366f1'/%3E%3Ctext x='32' y='44' font-size='38' font-family='Segoe UI,sans-serif' font-weight='700' fill='white' text-anchor='middle'%3ER%3C/text%3E%3C/svg%3E">
+    <title>Dashboard — Raj School</title>
+    <link rel="preload" as="image" href="assets/img/digital-waves.webp">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="grid-bg" data-page="dashboard">
+    <div id="app-shell"></div>
+    <div class="aurora-layer" aria-hidden="true"></div>
+
+    <main class="content">
+        <div class="page-header">
+            <div>
+                <h2>School Overview</h2>
+                <p>Welcome back! Here is today's academic &amp; administrative summary.</p>
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                <a href="students.html" class="btn btn-primary admin-only">＋ Add New Student</a>
+                <a href="fees.html" class="btn btn-outline fee-action">💳 Collect Fee</a>
+                <button class="btn btn-outline admin-only" onclick="openModal('noticeModal')">📢 Post Notice</button>
+                <a href="timetable.html" class="btn btn-outline">🗓️ Timetable</a>
+            </div>
+        </div>
+
+        <div class="kpi-grid">
+            <div class="kpi-card"><div class="kpi-label">Total Students</div><div class="kpi-value" id="kpiTotal">0</div><div class="kpi-foot trend-up">↑ Live from student directory</div></div>
+            <div class="kpi-card"><div class="kpi-label">Present Today</div><div class="kpi-value" id="kpiPresent" style="color:var(--success)">0</div><div class="kpi-foot" id="kpiPresentFoot">—</div></div>
+            <div class="kpi-card"><div class="kpi-label">Fees Collected</div><div class="kpi-value" id="kpiFeesPaid">₹0</div><div class="kpi-foot trend-up" id="kpiFeeFoot">—</div></div>
+            <div class="kpi-card"><div class="kpi-label">Pending Fees</div><div class="kpi-value" id="kpiFeesPending" style="color:var(--warning)">0</div><div class="kpi-foot trend-warn">Students yet to pay</div></div>
+            <div class="kpi-card admin-only"><div class="kpi-label">Total Teachers</div><div class="kpi-value" id="kpiTeachers">0</div><div class="kpi-foot"><a href="teachers.html" style="color:var(--primary)">Manage faculty →</a></div></div>
+        </div>
+
+        <div class="chart-grid">
+            <div class="glass-panel">
+                <div class="panel-title">📈 Attendance Trend</div>
+                <div class="bar-chart" id="attendanceChart"></div>
+            </div>
+            <div class="glass-panel">
+                <div class="panel-title">💰 Fee Status</div>
+                <div class="donut-wrap">
+                    <div class="donut" id="feeDonut"></div>
+                    <div class="legend">
+                        <div><i style="background:var(--success)"></i>Paid <strong id="legendPaid">0</strong></div>
+                        <div><i style="background:var(--warning)"></i>Pending <strong id="legendPending">0</strong></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-panel">
+            <div class="page-header" style="margin-bottom:14px;">
+                <div class="panel-title" style="margin:0;">📢 School Notice Board</div>
+                <button class="btn btn-primary btn-sm admin-only" onclick="openModal('noticeModal')">＋ Post Notice</button>
+            </div>
+            <div id="noticeList"></div>
+        </div>
+
+        <div class="glass-panel admin-only" id="inquiries">
+            <div class="page-header" style="margin-bottom:14px;">
+                <div class="panel-title" style="margin:0;">📩 Admission Inquiries <span class="badge badge-info" id="inqCount">0</span></div>
+                <a href="home.html" class="btn btn-outline btn-sm">View Website →</a>
+            </div>
+            <div id="inquiryList"></div>
+        </div>
+
+        <div class="glass-panel">
+            <div class="panel-title">🎓 Recent Students</div>
+            <div class="table-wrapper">
+                <table>
+                    <thead><tr><th>Roll No</th><th>Name</th><th>Class</th><th>Fee Status</th></tr></thead>
+                    <tbody id="recentStudents"></tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <div class="modal" id="noticeModal">
+        <div class="modal-box">
+            <h3 style="margin-bottom:16px;">Publish New Notice</h3>
+            <div class="form-group"><label>Title</label><input id="noticeTitle" placeholder="e.g. Annual Day"></div>
+            <div class="form-group"><label>Message</label><textarea id="noticeDesc" rows="3" placeholder="Notice details..."></textarea></div>
+            <div class="modal-actions">
+                <button class="btn btn-outline" onclick="closeModal('noticeModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="addNotice()">Publish</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        const user = getUser();
+        if (user && user.role !== 'Admin') {
+            document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
+        }
+        if (user && user.role === 'Teacher') {
+            document.querySelectorAll('.fee-action').forEach(el => el.style.display = 'none');
+        }
+
+        function loadDashboard() {
+            const students = getStudents();
+            const log = getAttendanceLog();
+            const todaysLog = log.filter(x => x.date === todayStr());
+            const present = todaysLog.length
+                ? todaysLog.filter(x => x.status === 'Present').length
+                : students.filter(s => s.attendance === 'Present').length;
+
+            const paid = students.filter(s => s.feeStatus === 'Paid');
+            const pending = students.filter(s => s.feeStatus === 'Pending');
+            const collected = paid.reduce((sum, s) => sum + Number(s.feeAmount), 0);
+            const pendingAmount = pending.reduce((sum, s) => sum + Number(s.feeAmount), 0);
+
+            document.getElementById('kpiTotal').textContent = students.length;
+            document.getElementById('kpiPresent').textContent = present;
+            document.getElementById('kpiPresentFoot').textContent = Math.round((present / Math.max(students.length, 1)) * 100) + '% of total strength';
+            document.getElementById('kpiFeesPaid').textContent = money(collected);
+            document.getElementById('kpiFeeFoot').textContent = 'From ' + paid.length + ' students';
+            document.getElementById('kpiFeesPending').textContent = pending.length;
+            document.getElementById('kpiTeachers').textContent = getTeachers().length;
+
+            // Attendance trend: last 5 logged dates, fallback to sample
+            const dates = [...new Set(log.map(x => x.date))].slice(-5);
+            const bars = dates.length
+                ? dates.map(date => {
+                    const rows = log.filter(x => x.date === date);
+                    return { label: date.slice(0, 6), value: Math.round(rows.filter(x => x.status === 'Present').length / Math.max(rows.length, 1) * 100) };
+                  })
+                : [{ label: 'Mon', value: 92 }, { label: 'Tue', value: 95 }, { label: 'Wed', value: 89 }, { label: 'Thu', value: 96 }, { label: 'Fri', value: 94 }];
+            document.getElementById('attendanceChart').innerHTML = bars.map(b => `
+                <div class="bar-group" title="${b.value}%">
+                    <div class="bar" style="height:${Math.max(b.value, 5)}%"></div>
+                    <span>${esc(b.label)}</span>
+                    <span style="color:var(--success);font-weight:700">${b.value}%</span>
+                </div>`).join('');
+
+            const paidPct = students.length ? Math.round(paid.length / students.length * 100) : 0;
+            document.getElementById('feeDonut').style.background =
+                `conic-gradient(var(--success) 0 ${paidPct}%, var(--warning) ${paidPct}% 100%)`;
+            document.getElementById('legendPaid').textContent = paid.length;
+            document.getElementById('legendPending').textContent = pending.length;
+            document.getElementById('kpiFeesPending').title = money(pendingAmount) + ' pending amount';
+
+            const notices = getNotices();
+            document.getElementById('noticeList').innerHTML = notices.length
+                ? notices.map(n => `
+                    <div style="padding:13px 0;border-bottom:1px solid var(--border-glass)">
+                        <small style="color:var(--primary);font-weight:700">${esc(n.date)}</small>
+                        <h4 style="margin:4px 0">${esc(n.title)}</h4>
+                        <p class="muted small">${esc(n.desc)}</p>
+                    </div>`).join('')
+                : '<div class="empty"><span>📭</span>No notices yet.</div>';
+
+            document.getElementById('recentStudents').innerHTML = students.slice(0, 5).map(s => `
+                <tr><td><strong>${esc(s.roll)}</strong></td><td>${esc(s.name)}</td><td>${esc(s.class)}</td>
+                <td><span class="badge ${s.feeStatus === 'Paid' ? 'badge-paid' : 'badge-pending'}">${esc(s.feeStatus)}</span></td></tr>`).join('');
+
+            const inquiries = getInquiries();
+            document.getElementById('inqCount').textContent = inquiries.length;
+            document.getElementById('inquiryList').innerHTML = inquiries.length
+                ? inquiries.map((q, i) => `
+                    <div style="padding:13px 0;border-bottom:1px solid var(--border-glass)">
+                        <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap">
+                            <strong>${esc(q.name)}</strong><small class="muted">${esc(q.date)} · ${esc(q.type)}</small>
+                        </div>
+                        <p class="muted small">${esc(q.phone)} ${q.email ? '· ' + esc(q.email) : ''}</p>
+                        <p class="small" style="margin-top:5px">${esc(q.message)}</p>
+                        <button class="btn btn-success btn-sm" style="margin-top:8px" onclick="resolveInquiry(${i})">✓ Mark Handled</button>
+                    </div>`).join('')
+                : '<div class="empty"><span>📭</span>No new inquiries.</div>';
+        }
+
+        function addNotice() {
+            const title = document.getElementById('noticeTitle').value.trim();
+            const desc = document.getElementById('noticeDesc').value.trim();
+            if (!title || !desc) return alert('Please enter title and message.');
+            const notices = getNotices();
+            notices.unshift({ date: todayStr(), title, desc });
+            saveNotices(notices);
+            document.getElementById('noticeTitle').value = '';
+            document.getElementById('noticeDesc').value = '';
+            closeModal('noticeModal');
+            loadDashboard();
+            toast('Notice published');
+        }
+
+        function resolveInquiry(index) {
+            const all = getInquiries();
+            all.splice(index, 1);
+            saveInquiries(all);
+            loadDashboard();
+            toast('Inquiry marked as handled');
+        }
+
+        loadDashboard();
+    </script>
+</body>
+</html>

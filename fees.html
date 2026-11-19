@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%236366f1'/%3E%3Ctext x='32' y='44' font-size='38' font-family='Segoe UI,sans-serif' font-weight='700' fill='white' text-anchor='middle'%3ER%3C/text%3E%3C/svg%3E">
+    <title>Fees — Raj School</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="grid-bg" data-page="fees">
+    <div id="app-shell"></div>
+
+    <main class="content">
+        <div class="page-header">
+            <div><h2>Fee Management</h2><p>Track paid and pending tuition fees and print official receipts.</p></div>
+            <span class="badge badge-info" id="roleNote"></span>
+        </div>
+
+        <div class="kpi-grid">
+            <div class="kpi-card"><div class="kpi-label">Fees Collected</div><div class="kpi-value" id="feeCollected" style="color:var(--success)">₹0</div></div>
+            <div class="kpi-card"><div class="kpi-label">Pending Amount</div><div class="kpi-value" id="feePending" style="color:var(--warning)">₹0</div></div>
+            <div class="kpi-card"><div class="kpi-label">Paid Invoices</div><div class="kpi-value" id="feePaidCount">0</div></div>
+            <div class="kpi-card"><div class="kpi-label">Pending Invoices</div><div class="kpi-value" id="feePendCount">0</div></div>
+        </div>
+
+        <div class="glass-panel no-print">
+            <div class="toolbar">
+                <input class="search" id="searchInput" placeholder="Search student or roll..." oninput="renderFees()">
+                <select id="statusFilter" onchange="renderFees()">
+                    <option value="">All Status</option>
+                    <option>Paid</option>
+                    <option>Pending</option>
+                </select>
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead><tr><th>Roll No</th><th>Student Name</th><th>Class</th><th>Term Fee</th><th>Status</th><th>Action</th></tr></thead>
+                    <tbody id="feeBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="glass-panel" id="receiptBox" style="display:none;max-width:560px;">
+            <div style="text-align:center;border-bottom:1px dashed var(--border-glass);padding-bottom:14px;">
+                <h2 style="font-size:22px;">Raj School</h2>
+                <p class="muted small">Knowledge Park, Uttar Pradesh · admissions@rajschool.edu.in</p>
+                <p style="margin-top:8px;font-weight:700;color:var(--primary);">OFFICIAL FEE RECEIPT</p>
+            </div>
+            <div id="receiptDetails" style="margin:18px 0;"></div>
+            <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:26px;">
+                <div class="small muted">This is a computer generated receipt.</div>
+                <div style="text-align:center;">
+                    <div style="border-top:1px solid var(--text-muted);padding-top:4px;font-size:12px;width:130px;">Authorised Signatory</div>
+                </div>
+            </div>
+            <button class="btn btn-primary no-print" style="margin-top:20px;" onclick="window.print()">🖨️ Print Receipt</button>
+        </div>
+    </main>
+
+    <div class="modal" id="payModal">
+        <div class="modal-box">
+            <h3 style="margin-bottom:6px;">Collect Fee</h3>
+            <p class="muted small" id="payStudent" style="margin-bottom:18px;"></p>
+            <div class="form-group"><label>Payment Mode</label>
+                <select id="payMode"><option>Cash</option><option>UPI</option><option>Card</option><option>Bank Transfer</option></select>
+            </div>
+            <div class="form-group"><label>Amount (₹)</label><input id="payAmount" type="number" min="0" readonly></div>
+            <div class="modal-actions">
+                <button class="btn btn-outline" onclick="closeModal('payModal')">Cancel</button>
+                <button class="btn btn-success" onclick="confirmPayment()">✓ Confirm Payment</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script>
+        const user = getUser();
+        let payingRoll = null;
+        const isAdmin = user && user.role === 'Admin';
+        document.getElementById('roleNote').textContent = isAdmin ? 'Admin · offline & online collection' : 'Student · online payment';
+
+        function renderFees() {
+            const all = getStudents();
+            const q = document.getElementById('searchInput').value.toLowerCase();
+            const status = document.getElementById('statusFilter').value;
+            const list = all.filter(s =>
+                (!q || s.name.toLowerCase().includes(q) || s.roll.toLowerCase().includes(q)) &&
+                (!status || s.feeStatus === status)
+            );
+
+            const paid = all.filter(s => s.feeStatus === 'Paid');
+            const pending = all.filter(s => s.feeStatus === 'Pending');
+            document.getElementById('feeCollected').textContent = money(paid.reduce((a, s) => a + Number(s.feeAmount), 0));
+            document.getElementById('feePending').textContent = money(pending.reduce((a, s) => a + Number(s.feeAmount), 0));
+            document.getElementById('feePaidCount').textContent = paid.length;
+            document.getElementById('feePendCount').textContent = pending.length;
+
+            document.getElementById('feeBody').innerHTML = list.length ? list.map(s => `
+                <tr>
+                    <td><strong>${esc(s.roll)}</strong></td>
+                    <td>${esc(s.name)}</td>
+                    <td>${esc(s.class)}</td>
+                    <td>${money(s.feeAmount)}</td>
+                    <td><span class="badge ${s.feeStatus === 'Paid' ? 'badge-paid' : 'badge-pending'}">${esc(s.feeStatus)}</span></td>
+                    <td>
+                        ${s.feeStatus === 'Pending'
+                            ? `<button class="btn btn-primary btn-sm" onclick="openPay('${esc(s.roll)}')">${isAdmin ? 'Collect Fee' : 'Pay Now'}</button>`
+                            : `<button class="btn btn-success btn-sm" onclick="viewReceipt('${esc(s.roll)}')">View Receipt</button>`}
+                    </td>
+                </tr>`).join('') : '<tr><td colspan="6"><div class="empty"><span>💳</span>No fee records found.</div></td></tr>';
+        }
+
+        function openPay(roll) {
+            const s = getStudents().find(x => x.roll === roll);
+            if (!s) return;
+            payingRoll = roll;
+            document.getElementById('payStudent').textContent = s.name + ' · ' + s.class + ' · ' + s.roll;
+            document.getElementById('payAmount').value = s.feeAmount;
+            openModal('payModal');
+        }
+
+        function confirmPayment() {
+            const students = getStudents();
+            const s = students.find(x => x.roll === payingRoll);
+            if (!s) return;
+            s.feeStatus = 'Paid';
+            s.paymentDate = todayStr();
+            s.paymentMode = document.getElementById('payMode').value;
+            s.receiptNo = 'RCPT-' + Date.now().toString().slice(-6);
+            saveStudents(students);
+            closeModal('payModal');
+            renderFees();
+            viewReceipt(payingRoll);
+            toast('Payment received · receipt generated');
+        }
+
+        function viewReceipt(roll) {
+            const s = getStudents().find(x => x.roll === roll);
+            if (!s) return;
+            document.getElementById('receiptBox').style.display = 'block';
+            document.getElementById('receiptDetails').innerHTML = `
+                <div class="id-row"><span>Receipt No</span><strong>${esc(s.receiptNo || '—')}</strong></div>
+                <div class="id-row"><span>Date</span><strong>${esc(s.paymentDate || todayStr())}</strong></div>
+                <div class="id-row"><span>Student Name</span><strong>${esc(s.name)}</strong></div>
+                <div class="id-row"><span>Roll Number</span><strong>${esc(s.roll)}</strong></div>
+                <div class="id-row"><span>Class</span><strong>${esc(s.class)}</strong></div>
+                <div class="id-row"><span>Payment Mode</span><strong>${esc(s.paymentMode || 'Cash')}</strong></div>
+                <div class="id-row"><span>Amount Paid</span><strong style="color:var(--success)">${money(s.feeAmount)}</strong></div>
+                <div class="id-row"><span>Status</span><strong style="color:var(--success)">PAID IN FULL</strong></div>`;
+            document.getElementById('receiptBox').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        renderFees();
+    </script>
+</body>
+</html>
